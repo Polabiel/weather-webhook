@@ -1,0 +1,22 @@
+{
+  "name": "weather-webhook",
+  "version": "1.0.0",
+  "description": "Webhook that sends weather information every 1 minute to Chatvolt",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "webhook",
+    "weather",
+    "chatvolt"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2"
+  }
+}
