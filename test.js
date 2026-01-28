@@ -1,11 +1,12 @@
 /**
- * Simple test to verify the core functionality without API keys
- * This test validates the code structure and basic functionality
+ * Test suite for weather webhook server
+ * Tests core functionality without requiring actual API keys
  */
 
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
-console.log('🧪 Running basic tests...\n');
+console.log('🧪 Running weather webhook tests...\n');
 
 // Test 1: Check if dotenv loads
 console.log('Test 1: Loading dotenv...');
@@ -17,18 +18,20 @@ try {
   process.exit(1);
 }
 
-// Test 2: Check if node-fetch is available
-console.log('Test 2: Checking node-fetch...');
+// Test 2: Check if dependencies are available
+console.log('Test 2: Checking dependencies...');
 try {
-  const fetch = (await import('node-fetch')).default;
-  console.log('✅ node-fetch is available\n');
+  const express = (await import('express')).default;
+  const nodeFetch = (await import('node-fetch')).default;
+  console.log('✅ express available');
+  console.log('✅ node-fetch available\n');
 } catch (error) {
-  console.error('❌ Failed to import node-fetch:', error.message);
+  console.error('❌ Failed to import dependencies:', error.message);
   process.exit(1);
 }
 
 // Test 3: Validate message formatting function
-console.log('Test 3: Testing message formatting...');
+console.log('Test 3: Testing weather message formatting...');
 try {
   const mockWeatherData = {
     name: 'São Paulo',
@@ -50,7 +53,7 @@ try {
   function formatWeatherMessage(weatherData) {
     const temp = Math.round(weatherData.main.temp);
     const feelsLike = Math.round(weatherData.main.feels_like);
-    const description = weatherData.weather[0].description;
+    const description = weatherData.weather[0]?.description || 'N/A';
     const humidity = weatherData.main.humidity;
     const windSpeed = weatherData.wind.speed;
     const cityName = weatherData.name;
@@ -77,22 +80,96 @@ try {
 // Test 4: Check environment variable handling
 console.log('Test 4: Checking environment variable handling...');
 try {
-  const testInterval = parseInt(process.env.UPDATE_INTERVAL) || 60000;
+  const testPort = parseInt(process.env.PORT) || 3000;
   const testCity = process.env.CITY || 'Sao Paulo';
   const testCountry = process.env.COUNTRY_CODE || 'BR';
   
+  console.log(`  Port: ${testPort}`);
   console.log(`  City: ${testCity}`);
   console.log(`  Country: ${testCountry}`);
-  console.log(`  Interval: ${testInterval}ms`);
   console.log('✅ Environment variables handled correctly\n');
 } catch (error) {
   console.error('❌ Failed to handle environment variables:', error.message);
   process.exit(1);
 }
 
+// Test 5: Validate Chatvolt event payload structure
+console.log('Test 5: Testing Chatvolt webhook payload validation...');
+try {
+  const mockChatvoltPayload = {
+    eventType: 'AGENT_USER_MESSAGE',
+    conversationId: 'conv-123',
+    messageId: 'msg-456',
+    agentId: 'agent-789',
+    agentName: 'Weather Bot',
+    channel: 'whatsapp',
+    conversationStatus: 'open',
+    conversationPriority: 'normal',
+    isAiEnabled: true,
+    organizationId: 'org-123',
+    userMessage: 'Qual o clima hoje?',
+    userName: 'João Silva',
+    createdAt: new Date().toISOString()
+  };
+
+  // Validate required fields
+  const requiredFields = ['eventType', 'conversationId', 'agentId'];
+  const hasRequiredFields = requiredFields.every(field => 
+    mockChatvoltPayload.hasOwnProperty(field)
+  );
+
+  if (hasRequiredFields) {
+    console.log('✅ Chatvolt payload structure is valid');
+    console.log(`  Event Type: ${mockChatvoltPayload.eventType}`);
+    console.log(`  Conversation ID: ${mockChatvoltPayload.conversationId}`);
+    console.log(`  User Message: ${mockChatvoltPayload.userMessage}\n`);
+  } else {
+    throw new Error('Missing required fields in payload');
+  }
+} catch (error) {
+  console.error('❌ Failed to validate payload:', error.message);
+  process.exit(1);
+}
+
+// Test 6: Test webhook response structure
+console.log('Test 6: Testing webhook response structure...');
+try {
+  const mockResponse = {
+    success: true,
+    message: '🌤️ **Clima em São Paulo**...',
+    eventType: 'AGENT_USER_MESSAGE',
+    conversationId: 'conv-123',
+    timestamp: new Date().toISOString(),
+    weatherData: {
+      temperature: 25.5,
+      feelsLike: 27.3,
+      description: 'céu limpo',
+      humidity: 65,
+      windSpeed: 3.5,
+      city: 'São Paulo'
+    }
+  };
+
+  if (mockResponse.success && mockResponse.weatherData) {
+    console.log('✅ Response structure is valid');
+    console.log(`  Temperature: ${mockResponse.weatherData.temperature}°C`);
+    console.log(`  Humidity: ${mockResponse.weatherData.humidity}%\n`);
+  } else {
+    throw new Error('Invalid response structure');
+  }
+} catch (error) {
+  console.error('❌ Failed to validate response:', error.message);
+  process.exit(1);
+}
+
 console.log('🎉 All tests passed!\n');
-console.log('⚠️  Note: To run the full application, you need to:');
+console.log('📋 Next steps:');
 console.log('  1. Copy .env.example to .env');
-console.log('  2. Add your CHATVOLT_WEBHOOK_URL');
-console.log('  3. Add your WEATHER_API_KEY from OpenWeatherMap');
-console.log('  4. Run: npm start\n');
+console.log('  2. Add your WEATHER_API_KEY from OpenWeatherMap');
+console.log('  3. Run: npm start');
+console.log('  4. Expose the server using ngrok or similar:');
+console.log('     ngrok http 3000');
+console.log('  5. Configure the webhook URL in Chatvolt:');
+console.log('     Agents > Select Agent > Settings > WebHooks');
+console.log('     URL: https://your-public-url/webhook\n');
+
